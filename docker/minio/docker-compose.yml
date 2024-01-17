@@ -1,0 +1,20 @@
+version: "3"
+services:
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio-dev
+    command:
+      - server
+      - /data
+      - --console-address
+      - :9001
+    volumes:
+      - ../../kms-identity:/kms-identity
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_KMS_KES_ENDPOINT=https://play.min.io:7373
+      - MINIO_KMS_KES_KEY_FILE=/kms-identity/root.key
+      - MINIO_KMS_KES_CERT_FILE=/kms-identity/root.cert
+      - MINIO_KMS_KES_KEY_NAME=dev-key2

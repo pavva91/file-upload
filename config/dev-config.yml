@@ -1,0 +1,16 @@
+minio:
+  endpoint: "localhost:9000"
+  # access-key-id: "xnZSeBX60hUtxqEaNwRe"
+  # secret-access-key: "KCT2Vk1LeAJgYC1Wuwxows06T6gYnbF31K6CW5Qd"
+  access-key-id: "XzeRINDlyW6hKTjaEp3h"
+  secret-access-key: "iGeg5jii8bSbPf0Xngs3HH8OuQvnaicygzwzqD7J"
+
+# Server configurations
+server:
+  api-path: "api"
+  api-version: "v1"
+  cors-allowed-clients: []
+  environment: "dev"
+  host: "localhost"
+  port: 8080
+  protocol: "http"
