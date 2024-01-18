@@ -23,13 +23,10 @@ func main() {
 		setConfig("./config/dev-config.yml")
 	case "stage":
 		log.Panic(fmt.Sprintf("Incorrect Dev Environment: %s\nInterrupt execution", env))
-		os.Exit(1)
 	case "prod":
 		log.Panic(fmt.Sprintf("Incorrect Dev Environment: %s\nInterrupt execution", env))
-		os.Exit(1)
 	default:
 		log.Panic(fmt.Sprintf("Incorrect Dev Environment: %s\nInterrupt execution", env))
-		os.Exit(1)
 	}
 
 	storage.MinioClient = storage.CreateMinioClient()
@@ -40,6 +37,7 @@ func main() {
 
 	// Register the routes and handlers
 	mux.Handle("/", &homeHandler{})
+	mux.Handle("/health", &healthHandler{})
 	mux.Handle("/files", &api.FilesHandler{})
 	mux.Handle("/files/", &api.FilesHandler{})
 
@@ -66,5 +64,11 @@ func setConfig(path string) {
 type homeHandler struct{}
 
 func (h *homeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("This is my home page"))
+	w.Write([]byte("home"))
+}
+
+type healthHandler struct{}
+
+func (h *healthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("healthy"))
 }
