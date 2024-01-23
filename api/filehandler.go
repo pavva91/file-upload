@@ -3,117 +3,169 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/pavva91/file-upload/dto"
 	"github.com/pavva91/file-upload/errorhandlers"
+	"github.com/pavva91/file-upload/services"
 	"github.com/pavva91/file-upload/storage"
 )
 
 type FilesHandler struct{}
 
 var (
-	FileRe                     = regexp.MustCompile(`^/files/*$`)
-	FileReWithID               = regexp.MustCompile(`^/files/([a-z0-9]+(?:-[a-z0-9]+)+)$`)
+	FileRe         = regexp.MustCompile(`^/files/*$`)
+	FileReWithID   = regexp.MustCompile(`^/files/([a-z0-9]+(?:-[a-z0-9]+)+)$`)
+	FileReWithName = regexp.MustCompile(`^/files/.+$`)
 )
 
 func (h *FilesHandler) UploadFile(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
-	var req dto.UpdateFileRequest
+	var reqBody dto.UploadFileRequest
 
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err := json.NewDecoder(r.Body).Decode(&reqBody)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err = req.Validate()
-	if (err != nil) {
+	err = reqBody.Validate()
+	if err != nil {
 		errorhandlers.BadRequestHandler(w, r, err)
 		return
 	}
 
-	// Make a new bucket called testbucket.
+	bucketName := reqBody.BucketName
 
-	// bucketName := "testbucket"
-	// location := "us-east-1"
+	bucketExists, err := services.BucketExist(bucketName)
+	if err != nil {
+		log.Println(err.Error())
+		errorhandlers.InternalServerErrorHandler(w, r)
+		return
+	}
 
-	bucketName := req.BucketName
-	location := req.Location
+	if !bucketExists {
+		msg := fmt.Sprintln("bucket", bucketName, "does not exist")
+		err := errors.New(msg)
+		log.Println(err.Error())
+		errorhandlers.BadRequestHandler(w, r, err)
+		return
+	}
 
 	// Upload the test file
 	// Change the value of filePath if the file is in another location
 
-	// objectName := "testdata"
-	// filePath := "/tmp/testdata"
-	// contentType := "application/octet-stream"
+	objectName := reqBody.ObjectName
+	filePath := reqBody.Filepath
+	contentType := reqBody.ContentType
 
-	objectName := req.ObjectName
-	filePath := req.Filepath
-	contentType := req.ContentType
-
-	err = storage.MinioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{Region: location})
+	// services.UploadFile(objectName, filePath, contentType, bucketName)
+	services.EncryptAndUploadFile(objectName, filePath, contentType, bucketName)
 	if err != nil {
-		// Check to see if we already own this bucket (which happens if you run this twice)
-		exists, errBucketExists := storage.MinioClient.BucketExists(ctx, bucketName)
-		if errBucketExists == nil && exists {
-			msg := fmt.Sprintf("We already own %s\n", bucketName)
-			log.Printf(msg)
-			// errorhandlers.BadRequestHandler(w, r, msg)
-		} else {
-			log.Fatalln(err)
-			errorhandlers.InternalServerErrorHandler(w, r)
-			return
+		log.Println(err)
+		errorhandlers.InternalServerErrorHandler(w, r)
+		return
+	}
+
+	// w.WriteHeader(http.StatusOK)
+}
+
+func (h *FilesHandler) DownloadFile(w http.ResponseWriter, r *http.Request) {
+	var reqBody dto.DownloadFileRequest
+
+	fileName := strings.TrimPrefix(r.URL.Path, "/files/")
+	log.Println(fmt.Sprintf("Request download file: %s", fileName))
+
+	err := json.NewDecoder(r.Body).Decode(&reqBody)
+	if err != nil {
+		if err.Error() == "EOF" {
+			err = errors.New("No Request JSON Body")
 		}
-	} else {
-		log.Printf("Successfully created %s\n", bucketName)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	// Upload the test file with FPutObject
-	info, err := storage.MinioClient.FPutObject(ctx, bucketName, objectName, filePath, minio.PutObjectOptions{ContentType: contentType})
+	err = reqBody.Validate()
 	if err != nil {
-		log.Fatalln(err)
 		errorhandlers.BadRequestHandler(w, r, err)
+		return
 	}
 
-	log.Printf("Successfully uploaded %s of size %d\n", objectName, info.Size)
-	w.WriteHeader(http.StatusOK)
+	bucket := reqBody.BucketName
+
+	bucketExists, err := services.BucketExist(bucket)
+	if err != nil {
+		log.Println(err.Error())
+		errorhandlers.InternalServerErrorHandler(w, r)
+		return
+	}
+
+	if !bucketExists {
+		msg := fmt.Sprintln("bucket", bucket, "does not exist")
+		err := errors.New(msg)
+		log.Println(err.Error())
+		errorhandlers.BadRequestHandler(w, r, err)
+		return
+	}
+
+	downloadPath := reqBody.DownloadPath
+
+	err = services.DownloadFile(bucket, fileName, downloadPath)
+	if err != nil {
+		log.Println(err)
+		if err.Error() == "The specified key does not exist." {
+			err = errors.New(fmt.Sprintf("Specified file %s is not present in bucket %s", fileName, bucket))
+			log.Println(err)
+			errorhandlers.BadRequestHandler(w, r, err)
+		} else {
+			errorhandlers.InternalServerErrorHandler(w, r)
+		}
+		return
+	}
+
+	msg := fmt.Sprintf("File %s correctly downloaded in: %s", fileName, downloadPath)
+	log.Println(msg)
+	w.Write([]byte(msg))
 }
 
 func (h *FilesHandler) ListFiles(w http.ResponseWriter, r *http.Request) {
+	var objects []minio.ObjectInfo
 	ctx, cancel := context.WithCancel(context.Background())
 
 	defer cancel()
 
 	objectCh := storage.MinioClient.ListObjects(ctx, "testbucket", minio.ListObjectsOptions{
-		Prefix:    "testdata",
+		Prefix:    "",
 		Recursive: true,
 	})
-	for object := range objectCh {
-		if object.Err != nil {
-			fmt.Println(object.Err)
+	for o := range objectCh {
+		if o.Err != nil {
+			fmt.Println(o.Err)
 			return
 		}
-		fmt.Println(object)
+		fmt.Println(o)
+		objects = append(objects, o)
 	}
 
-	// buckets, err := minioClient.ListBuckets(context.Background())
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// 	errorhandlers.InternalServerErrorHandler(w, r)
-	// }
-	// for _, bucket := range buckets {
-	// 	fmt.Println(bucket)
-	// }
+	// profile := Profile{"Alex", []string{"snowboarding", "programming"}}
+
+	js, err := json.Marshal(objects)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
 
 	w.WriteHeader(http.StatusOK)
-	// w.Write(buckets)
 }
-func (h *FilesHandler) GetFile(w http.ResponseWriter, r *http.Request)    {}
+
 func (h *FilesHandler) UpdateFile(w http.ResponseWriter, r *http.Request) {}
 func (h *FilesHandler) DeleteFile(w http.ResponseWriter, r *http.Request) {}
 
@@ -125,8 +177,8 @@ func (h *FilesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.Method == http.MethodGet && FileRe.MatchString(r.URL.Path):
 		h.ListFiles(w, r)
 		return
-	case r.Method == http.MethodGet && FileReWithID.MatchString(r.URL.Path):
-		h.GetFile(w, r)
+	case r.Method == http.MethodGet && FileReWithName.MatchString(r.URL.Path):
+		h.DownloadFile(w, r)
 		return
 	case r.Method == http.MethodPut && FileReWithID.MatchString(r.URL.Path):
 		h.UpdateFile(w, r)

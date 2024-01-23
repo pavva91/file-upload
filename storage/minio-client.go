@@ -8,12 +8,7 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/minio/minio-go/v7/pkg/sse"
 	"github.com/pavva91/file-upload/config"
-	"github.com/pavva91/file-upload/types"
 )
-
-type Storage interface {
-	Get(int) *types.User
-}
 
 var (
 	MinioClient *minio.Client
@@ -21,7 +16,6 @@ var (
 
 func CreateMinioClient() *minio.Client {
 	endpoint := config.ServerConfigValues.Minio.Endpoint
-	log.Print(endpoint)
 
 	accessKeyID := config.ServerConfigValues.Minio.AccessKeyID
 	secretAccessKey := config.ServerConfigValues.Minio.SecretAccessKey
@@ -44,6 +38,5 @@ func CreateMinioClient() *minio.Client {
 		log.Fatalln(err)
 	}
 
-	log.Printf("%#v\n", minioClient) // minioClient is now set up
 	return minioClient
 }

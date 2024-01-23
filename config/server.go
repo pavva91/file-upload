@@ -8,6 +8,9 @@ type ServerConfig struct {
 		Endpoint string    `yaml:"endpoint" env:"ENDPOINT" env-description:"Minio Server Endpoint"`
 		AccessKeyID        string `yaml:"access-key-id" env:"ACCESS_KEY_ID" env-description:"Access Key ID"`
 		SecretAccessKey        string `yaml:"secret-access-key" env:"SECRET_ACCESS_KEY" env-description:"Secret Access Key"`
+		EncryptionKeyID        string `yaml:"encryption-key-id" env:"ENCRYPTION_KEY_ID" env-description:"Encryption Key ID"`
+		Bucket        string `yaml:"bucket" env:"BUCKET" env-description:"Minio Bucket"`
+		Region        string `yaml:"region" env:"REGION" env-description:"AWS Region"`
 	} `yaml:"minio"`
 	Server struct {
 		ApiPath            string   `yaml:"api-path"  env:"API_PATH" env-description:"API base path"`

@@ -135,10 +135,21 @@ mc admin service restart myminio
 
 ```bash
 mc encrypt set sse-kms dev-key myminio/testbucket
-
 ```
 
-##### Getting Started Running KES Server
+**_NOTE:_** to remove automatic encryption on a bucket:
+
+```bash
+mc encrypt clear myminio/testbucket
+```
+
+**_NOTE:_** And then leave this command hanging in a window to show output logs.
+
+```bash
+mc admin trace -v myminio
+```
+
+##### Getting Started Running KES Server (Key Encryption Server)
 
 ###### 1. Generate KES Server Private Key & Certificate
 
@@ -219,3 +230,28 @@ kes key create my-key
 kes key dek my-key
 ```
 
+### cURL calls
+
+#### Upload File
+
+```bash
+curl --location --request POST 'http://localhost:8080/files' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "bucketName":"testbucket",
+    "objectName": "data2",
+    "filepath": "/tmp/test.txt",
+    "contentType": "application/octet-stream"
+}'
+```
+
+#### Download File
+
+```bash
+curl --location --request GET 'http://localhost:8080/files/filename' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "bucketName": "testbucket",
+    "downloadPath": "/tmp/download1.txt"
+}'
+```

@@ -4,6 +4,9 @@ minio:
   # secret-access-key: "KCT2Vk1LeAJgYC1Wuwxows06T6gYnbF31K6CW5Qd"
   access-key-id: "XzeRINDlyW6hKTjaEp3h"
   secret-access-key: "iGeg5jii8bSbPf0Xngs3HH8OuQvnaicygzwzqD7J"
+  bucket: "testbucket"
+  region: "us-east-1"
+  encryption-key-id: "dev-key2"
 
 # Server configurations
 server:

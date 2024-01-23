@@ -2,27 +2,28 @@ package dto
 
 import "errors"
 
-type UpdateFileRequest struct {
+type UploadFileRequest struct {
 	BucketName  string `json:"bucketName"`
-	Location    string `json:"location"`
+	// Location    string `json:"location"`
 	ObjectName  string `json:"objectName"`
 	Filepath    string `json:"filepath"`
 	ContentType string `json:"contentType"`
 }
 
-func (r *UpdateFileRequest) Validate() error {
+func (r *UploadFileRequest) Validate() error {
 	var errorMsg string
+
 	if r.BucketName == "" {
 		errorMsg = "Insert valid bucket name"
 		err := errors.New(errorMsg)
 		return err
 	}
 
-	if r.Location == "" {
-		errorMsg = "Insert valid location"
-		err := errors.New(errorMsg)
-		return err
-	}
+	// if r.Location == "" {
+	// 	errorMsg = "Insert valid location"
+	// 	err := errors.New(errorMsg)
+	// 	return err
+	// }
 
 	if r.ObjectName == "" {
 		errorMsg = "Insert valid object name"
