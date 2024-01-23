@@ -57,7 +57,15 @@ docker-compose up -d
 
 Create `access-key-id` and `secret-access-key` and copy the values inside `./config/dev-config.yml`
 
-Create `encryption-key-id` and copy the values inside `./config/dev-config.yml`
+Create `encryption-key-id` with:
+
+```bash
+kes key create dev-key
+```
+
+and copy the values inside `./config/dev-config.yml`
+
+**_NOTE:_** to install and configure kes [install mc, kes and configure server side encryption](#kes)
 
 #### Run Go Application
 
@@ -75,7 +83,6 @@ SERVER_ENVIRONMENT="dev" go run main.go
 mkdir testfiles
 dd if=/dev/urandom of=./testfiles/small1MiB bs=1M count=1
 dd if=/dev/urandom of=./testfiles/big100MiB bs=1M count=100
-
 ```
 
 3. Run test suite (inside project root folder)
@@ -133,6 +140,8 @@ To enable multipart upload there are 2 parameters in `./config/dev-config.yml`:
 2. file-chunk-size: 5
 
 ### Enable Server-Side Encryption (SSE)
+
+<a name="kes"></a>
 
 #### Install mc command (Minio Client)
 
