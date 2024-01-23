@@ -2,11 +2,13 @@ minio:
   endpoint: "localhost:9000"
   # access-key-id: "xnZSeBX60hUtxqEaNwRe"
   # secret-access-key: "KCT2Vk1LeAJgYC1Wuwxows06T6gYnbF31K6CW5Qd"
-  access-key-id: "XzeRINDlyW6hKTjaEp3h"
-  secret-access-key: "iGeg5jii8bSbPf0Xngs3HH8OuQvnaicygzwzqD7J"
+  access-key-id: "your-access-key-id"
+  secret-access-key: "your-secret-access-key"
+  encryption-key-id: "your-encryption-key-id"
   bucket: "testbucket"
   region: "us-east-1"
-  encryption-key-id: "dev-key2"
+  enable-multipart-upload: true
+  file-chunk-size: 5 # Minimum 5MiB
 
 # Server configurations
 server:

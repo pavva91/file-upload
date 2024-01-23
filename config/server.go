@@ -11,6 +11,8 @@ type ServerConfig struct {
 		EncryptionKeyID        string `yaml:"encryption-key-id" env:"ENCRYPTION_KEY_ID" env-description:"Encryption Key ID"`
 		Bucket        string `yaml:"bucket" env:"BUCKET" env-description:"Minio Bucket"`
 		Region        string `yaml:"region" env:"REGION" env-description:"AWS Region"`
+		EnableMultipartUpload        bool `yaml:"enable-multipart-upload" env:"ENABLE_MULTIPART_UPLOAD" env-description:"Enable Multipart Upload"`
+		FileChunkSize        int `yaml:"file-chunk-size" env:"FILE_CHUNK_SIZE" env-description:"File Chunk Size"`
 	} `yaml:"minio"`
 	Server struct {
 		ApiPath            string   `yaml:"api-path"  env:"API_PATH" env-description:"API base path"`

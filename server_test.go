@@ -25,8 +25,9 @@ func TestFileUpload(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	objectName := "object1"
-	err = services.RemoveObject(objectName, bucketName)
+	smallObjectName := "smallobject"
+	bigObjectName := "bigobject"
+	err = services.RemoveObject(bigObjectName, bucketName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,8 +85,13 @@ func TestFileUpload(t *testing.T) {
 			response: "bucket wrongbucketname does not exist",
 			status:   400,
 		},
-		"POST /files Upload OK": {
-			request:  newreq("POST", fileHandlerURL, strings.NewReader(fmt.Sprintf(`{"bucketName":"%s", "objectName":"%s", "filepath":"/tmp/test.txt", "contentType":"application/octet-stream"}`, bucketName, objectName))),
+		"POST /files Upload Small (1MiB) OK": {
+			request:  newreq("POST", fileHandlerURL, strings.NewReader(fmt.Sprintf(`{"bucketName":"%s", "objectName":"%s", "filepath":"./testfiles/small1MiB", "contentType":"application/octet-stream"}`, bucketName, smallObjectName))),
+			response: fmt.Sprintf(""),
+			status:   200,
+		},
+		"POST /files Upload Big (100MiB) OK": {
+			request:  newreq("POST", fileHandlerURL, strings.NewReader(fmt.Sprintf(`{"bucketName":"%s", "objectName":"%s", "filepath":"./testfiles/big100MiB", "contentType":"application/octet-stream"}`, bucketName, bigObjectName))),
 			response: fmt.Sprintf(""),
 			status:   200,
 		},

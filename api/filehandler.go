@@ -66,6 +66,7 @@ func (h *FilesHandler) UploadFile(w http.ResponseWriter, r *http.Request) {
 
 	// services.UploadFile(objectName, filePath, contentType, bucketName)
 	services.EncryptAndUploadFile(objectName, filePath, contentType, bucketName)
+	// services.EncryptAndUploadFileMultipart(objectName, filePath, contentType, bucketName)
 	if err != nil {
 		log.Println(err)
 		errorhandlers.InternalServerErrorHandler(w, r)

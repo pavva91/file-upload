@@ -46,9 +46,91 @@ after receipt of the challenge.
 
 ### Run
 
+1. Copy `./config/example-config.yml` into `./config/dev-config.yml` and put your own values
+
+#### Run Minio Docker Container
+
+```bash
+cd docker/minio
+docker-compose up -d
+```
+
+Create `access-key-id` and `secret-access-key` and copy the values inside `./config/dev-config.yml`
+
+Create `encryption-key-id` and copy the values inside `./config/dev-config.yml`
+
+#### Run Go Application
+
 ```bash
 SERVER_ENVIRONMENT="dev" go run main.go
 ```
+
+### Run Test Suite
+
+1. With the running minio docker container (verify with `docker ps`)
+
+2. Create small and big files (inside project root folder):
+
+```bash
+mkdir testfiles
+dd if=/dev/urandom of=./testfiles/small1MiB bs=1M count=1
+dd if=/dev/urandom of=./testfiles/big100MiB bs=1M count=100
+
+```
+
+3. Run test suite (inside project root folder)
+
+```bash
+go test
+```
+
+### cURL calls
+
+#### Upload Big File
+
+```bash
+curl --location --request POST 'http://localhost:8080/files' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "bucketName":"test",
+    "objectName": "big",
+    "filepath": "./testfiles/big100MiB",
+    "contentType": "application/octet-stream"
+}'
+```
+
+#### Upload Small File
+
+```bash
+curl --location --request POST 'http://localhost:8080/files' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "bucketName":"test",
+    "objectName": "small",
+    "filepath": "./testfiles/small1MiB",
+    "contentType": "application/octet-stream"
+}'
+```
+
+#### Download File (e.g. Small file)
+
+```bash
+curl --location --request GET 'http://localhost:8080/files/small' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "bucketName": "test",
+    "downloadPath": "/tmp/download1.txt"
+}'
+```
+
+### Multipart Upload
+
+By default minio starts doing multipart upload at 16MiB
+The minimum part size is 5MiB
+To enable multipart upload there are 2 parameters in `./config/dev-config.yml`:
+
+1. enable-multipart-upload: true
+2. file-chunk-size: 5
 
 ### Enable Server-Side Encryption (SSE)
 
@@ -228,30 +310,4 @@ kes key create my-key
 
 ```bash
 kes key dek my-key
-```
-
-### cURL calls
-
-#### Upload File
-
-```bash
-curl --location --request POST 'http://localhost:8080/files' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "bucketName":"testbucket",
-    "objectName": "data2",
-    "filepath": "/tmp/test.txt",
-    "contentType": "application/octet-stream"
-}'
-```
-
-#### Download File
-
-```bash
-curl --location --request GET 'http://localhost:8080/files/filename' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "bucketName": "testbucket",
-    "downloadPath": "/tmp/download1.txt"
-}'
 ```
