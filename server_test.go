@@ -19,7 +19,9 @@ func TestFileUpload(t *testing.T) {
 	setConfig("./config/dev-config.yml")
 	storage.MinioClient = storage.CreateMinioClient()
 
-	bucketName := "test"
+	// bucketName := config.ServerConfigValues.Minio.Bucket
+	bucketName := "test3"
+
 	err := services.CreateBucket(bucketName)
 	if err != nil {
 		t.Fatal(err)

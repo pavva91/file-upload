@@ -55,7 +55,7 @@ cd docker/minio
 docker-compose up -d
 ```
 
-Create `access-key-id` and `secret-access-key` and copy the values inside `./config/dev-config.yml`
+Create `access-key-id` and `secret-access-key` from minio dashboard ([http://127.0.0.1:9001/access-keys/new-account](http://127.0.0.1:9001/access-keys/new-account)) and copy the values inside `./config/dev-config.yml`
 
 Create `encryption-key-id` with:
 

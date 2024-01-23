@@ -10,6 +10,7 @@ import (
 
 	"github.com/pavva91/file-upload/api"
 	"github.com/pavva91/file-upload/config"
+	"github.com/pavva91/file-upload/services"
 	"github.com/pavva91/file-upload/storage"
 )
 
@@ -30,6 +31,12 @@ func main() {
 	}
 
 	storage.MinioClient = storage.CreateMinioClient()
+
+	bucketName := config.ServerConfigValues.Minio.Bucket
+	err := services.CreateBucket(bucketName)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Create a new request multiplexer
 	// Take incoming requests and dispatch them to the matching handlers

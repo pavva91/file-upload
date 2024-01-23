@@ -99,7 +99,7 @@ func EncryptAndUploadFileMultipart(objectName string, filePath string, contentTy
 		log.Println(err)
 		return minio.UploadInfo{}, err
 	}
-	
+
 	// Upload the test file with FPutObject
 	// uploadInfo, err := storage.MinioClient.FPutObject(ctx, bucketName, objectName, filePath, opts)
 	// uploadInfo, err := storage.MinioClient.PutObject(ctx, bucketName, objectName, file, -1, opts)
@@ -162,7 +162,8 @@ func CreateBucket(bucketName string) error {
 	}
 
 	// Create a bucket at region 'us-east-1' with object locking enabled.
-	err = storage.MinioClient.MakeBucket(context.Background(), bucketName, minio.MakeBucketOptions{Region: "us-east-1", ObjectLocking: true})
+	region := config.ServerConfigValues.Minio.Region
+	err = storage.MinioClient.MakeBucket(context.Background(), bucketName, minio.MakeBucketOptions{Region: region, ObjectLocking: true})
 	if err != nil {
 		log.Println(err)
 		return err
