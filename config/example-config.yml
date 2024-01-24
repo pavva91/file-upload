@@ -6,7 +6,7 @@ minio:
   bucket: "devbucket"
   region: "us-east-1"
   enable-multipart-upload: true
-  file-chunk-size: 5 # Minimum 5MiB
+  file-chunk-size: 16 # Minimum 5MiB
 
 # Server configurations
 server:

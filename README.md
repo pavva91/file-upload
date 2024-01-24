@@ -48,16 +48,18 @@ after receipt of the challenge.
 
 1. Copy `./config/example-config.yml` into `./config/dev-config.yml` and put your own values
 
-#### Run Minio Docker Container
+<a name="minio-docker"></a>
+
+#### 2. Run Minio Docker Container
 
 ```bash
 cd docker/minio
 docker-compose up -d
 ```
 
-Create `access-key-id` and `secret-access-key` from minio dashboard ([http://127.0.0.1:9001/access-keys/new-account](http://127.0.0.1:9001/access-keys/new-account)) and copy the values inside `./config/dev-config.yml`
+3. Create `access-key-id` and `secret-access-key` from minio dashboard ([http://127.0.0.1:9001/access-keys/new-account](http://127.0.0.1:9001/access-keys/new-account)) and copy the values inside `./config/dev-config.yml`
 
-Create `encryption-key-id` with:
+4. Create `encryption-key-id` with:
 
 ```bash
 kes key create dev-key
@@ -65,23 +67,21 @@ kes key create dev-key
 
 and copy the values inside `./config/dev-config.yml`
 
-**_NOTE:_** to install and configure kes [install mc, kes and configure server side encryption](#kes)
+**_NOTE:_** to install kes and mc I created a bash script in `./scripts/installMcAndKes.sh`
 
-#### Run Go Application
+**_NOTE:_** Guide to install and configure kes [install mc, kes and configure server side encryption](#kes)
 
-```bash
-SERVER_ENVIRONMENT="dev" go run main.go
-```
+#### Run Test Suite
 
-### Run Test Suite
-
-1. With the running minio docker container (verify with `docker ps`)
+1. With the [running minio docker container](#minio-docker) (verify with `docker ps`)
 
 2. Create small and big files (inside project root folder):
 
 ```bash
 mkdir testfiles
-dd if=/dev/urandom of=./testfiles/small1MiB bs=1M count=1
+dd if=/dev/urandom of=./testfiles/verysmall1MiB bs=1M count=1
+dd if=/dev/urandom of=./testfiles/small10MiB bs=1M count=10
+dd if=/dev/urandom of=./testfiles/medium20MiB bs=1M count=20
 dd if=/dev/urandom of=./testfiles/big100MiB bs=1M count=100
 ```
 
@@ -89,6 +89,12 @@ dd if=/dev/urandom of=./testfiles/big100MiB bs=1M count=100
 
 ```bash
 go test
+```
+
+#### Run Go Application
+
+```bash
+SERVER_ENVIRONMENT="dev" go run main.go
 ```
 
 ### cURL calls
@@ -106,6 +112,19 @@ curl --location --request POST 'http://localhost:8080/files' \
 }'
 ```
 
+#### Upload Medium File
+
+```bash
+curl --location --request POST 'http://localhost:8080/files' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "bucketName":"test",
+    "objectName": "medium",
+    "filepath": "./testfiles/medium20MiB",
+    "contentType": "application/octet-stream"
+}'
+```
+
 #### Upload Small File
 
 ```bash
@@ -114,7 +133,20 @@ curl --location --request POST 'http://localhost:8080/files' \
 --data-raw '{
     "bucketName":"test",
     "objectName": "small",
-    "filepath": "./testfiles/small1MiB",
+    "filepath": "./testfiles/small10MiB",
+    "contentType": "application/octet-stream"
+}'
+```
+
+#### Upload Very Small File
+
+```bash
+curl --location --request POST 'http://localhost:8080/files' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "bucketName":"test",
+    "objectName": "small",
+    "filepath": "./testfiles/verysmall1MiB",
     "contentType": "application/octet-stream"
 }'
 ```
@@ -132,12 +164,33 @@ curl --location --request GET 'http://localhost:8080/files/small' \
 
 ### Multipart Upload
 
-By default minio starts doing multipart upload at 16MiB
-The minimum part size is 5MiB
+By default minio starts doing multipart upload at 16MiB, one can enforce no multipart upload by setting `minio.PutObjectOptions{DisableMultipart: true}`
+So, by default minio multipart upload enabled and with part-size of 16MiB. ([code](https://github.com/minio/minio-go/blob/6ad2b4a17816b1e991f73e598885c07704aea7ef/api-put-object.go#L302))
+
+The minimum part size is 5MiB ([Part Size Range](https://min.io/docs/minio/container/operations/checklists/thresholds.html))
+[Code reference](https://github.com/minio/minio-go/blob/6ad2b4a17816b1e991f73e598885c07704aea7ef/constants.go#L24)
+
 To enable multipart upload there are 2 parameters in `./config/dev-config.yml`:
 
 1. enable-multipart-upload: true
 2. file-chunk-size: 5
+
+Verify Multipart upload with:
+
+```bash
+mc admin trace -v myminio
+```
+
+Look for:
+
+- `[REQUEST s3.NewMultipartUpload]`
+- `[REQUEST s3.PutObjectPart]` PUT /test/big?partNumber=1
+- `[REQUEST s3.PutObjectPart]` PUT /test/big?partNumber=2
+- `[REQUEST s3.PutObjectPart]` PUT /test/big?partNumber=n
+- `[REQUEST s3.CompleteMultipartUpload]`
+
+e.g. By uploading the big file (100MiB) with part-size of 5MiB there will be 20 parts. (20x `[REQUEST s3.PutObjectPart]`)
+e.g. By uploading the small file (10MiB) with part-size of 5MiB there will be 2 parts. (2x `[REQUEST s3.PutObjectPart]`)
 
 ### Enable Server-Side Encryption (SSE)
 

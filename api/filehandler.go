@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/minio/minio-go/v7"
+	"github.com/pavva91/file-upload/config"
 	"github.com/pavva91/file-upload/dto"
 	"github.com/pavva91/file-upload/errorhandlers"
 	"github.com/pavva91/file-upload/services"
@@ -57,23 +58,16 @@ func (h *FilesHandler) UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Upload the test file
-	// Change the value of filePath if the file is in another location
-
 	objectName := reqBody.ObjectName
 	filePath := reqBody.Filepath
 	contentType := reqBody.ContentType
 
-	// services.UploadFile(objectName, filePath, contentType, bucketName)
-	services.EncryptAndUploadFile(objectName, filePath, contentType, bucketName)
-	// services.EncryptAndUploadFileMultipart(objectName, filePath, contentType, bucketName)
+	services.EncryptAndUploadFileMultipart(objectName, filePath, contentType, bucketName)
 	if err != nil {
 		log.Println(err)
 		errorhandlers.InternalServerErrorHandler(w, r)
 		return
 	}
-
-	// w.WriteHeader(http.StatusOK)
 }
 
 func (h *FilesHandler) DownloadFile(w http.ResponseWriter, r *http.Request) {
@@ -140,7 +134,8 @@ func (h *FilesHandler) ListFiles(w http.ResponseWriter, r *http.Request) {
 
 	defer cancel()
 
-	objectCh := storage.MinioClient.ListObjects(ctx, "testbucket", minio.ListObjectsOptions{
+	bucketName := config.ServerConfigValues.Minio.Bucket
+	objectCh := storage.MinioClient.ListObjects(ctx, bucketName, minio.ListObjectsOptions{
 		Prefix:    "",
 		Recursive: true,
 	})
@@ -153,8 +148,6 @@ func (h *FilesHandler) ListFiles(w http.ResponseWriter, r *http.Request) {
 		objects = append(objects, o)
 	}
 
-	// profile := Profile{"Alex", []string{"snowboarding", "programming"}}
-
 	js, err := json.Marshal(objects)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -163,12 +156,8 @@ func (h *FilesHandler) ListFiles(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(js)
-
 	w.WriteHeader(http.StatusOK)
 }
-
-func (h *FilesHandler) UpdateFile(w http.ResponseWriter, r *http.Request) {}
-func (h *FilesHandler) DeleteFile(w http.ResponseWriter, r *http.Request) {}
 
 func (h *FilesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
@@ -180,12 +169,6 @@ func (h *FilesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	case r.Method == http.MethodGet && FileReWithName.MatchString(r.URL.Path):
 		h.DownloadFile(w, r)
-		return
-	case r.Method == http.MethodPut && FileReWithID.MatchString(r.URL.Path):
-		h.UpdateFile(w, r)
-		return
-	case r.Method == http.MethodDelete && FileReWithID.MatchString(r.URL.Path):
-		h.DeleteFile(w, r)
 		return
 	default:
 		return
