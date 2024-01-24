@@ -1,2 +1,4 @@
 config/dev-config.yml
 testfiles
+minio-binaries
+kms-identity

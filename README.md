@@ -67,7 +67,7 @@ kes key create dev-key
 
 and copy the values inside `./config/dev-config.yml`
 
-**_NOTE:_** to install kes and mc I created a bash script in `./scripts/installMcAndKes.sh`
+**_NOTE:_** to install kes and mc I created a bash script in `./scripts/installMcAndKes.sh` ([run bash script])
 
 **_NOTE:_** Guide to install and configure kes [install mc, kes and configure server side encryption](#kes)
 
@@ -372,4 +372,29 @@ kes key create my-key
 
 ```bash
 kes key dek my-key
+```
+
+<a name="bash"></a>
+
+### Run Bash Script
+
+From Project root:
+
+```bash
+cd scripts
+./installMcAndKes.sh
+```
+
+then set variables:
+
+```bash
+cd scripts
+source setVars.sh
+```
+
+now, check if commands are available
+
+```bash
+mc --help
+kes --help
 ```
