@@ -65,9 +65,9 @@ docker-compose up -d
 kes key create dev-key
 ```
 
-and copy the values inside `./config/dev-config.yml`
+And copy the values inside `./config/dev-config.yml`
 
-**_NOTE:_** to install kes and mc I created a bash script in `./scripts/installMcAndKes.sh` ([run bash script])
+**_NOTE:_** To quickly install kes and mc I created a bash script in `./scripts/installMcAndKes.sh` ([run bash script](#bash))
 
 **_NOTE:_** Guide to install and configure kes [install mc, kes and configure server side encryption](#kes)
 
