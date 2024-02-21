@@ -28,7 +28,8 @@ var (
 	FileReWithName = regexp.MustCompile(`^/files/.+$`)
 )
 
-func (h *FilesHandler) HandlePost(w http.ResponseWriter, r *http.Request) {
+// UploadFileOnLocalStorage method    Simply upload a file into local storage
+func (h *FilesHandler) UploadFileOnLocalStorage(w http.ResponseWriter, r *http.Request) {
 	// Parse request body as multipart form data with 32MB max memory
 	err := r.ParseMultipartForm(32 << 20)
 	if err != nil {
@@ -45,7 +46,8 @@ func (h *FilesHandler) HandlePost(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	// Create file locally
-	localFile, err := os.Create(handler.Filename)
+	filePath := fmt.Sprintf("tmp/%s",handler.Filename)
+	localFile, err := os.Create(filePath)
 	if err != nil {
 		log.Println(err)
 		errorhandlers.InternalServerErrorHandler(w, r)
@@ -59,23 +61,43 @@ func (h *FilesHandler) HandlePost(w http.ResponseWriter, r *http.Request) {
 		errorhandlers.InternalServerErrorHandler(w, r)
 		return
 	}
+	w.WriteHeader(http.StatusOK)
 }
-func (h *FilesHandler) UploadFile(w http.ResponseWriter, r *http.Request) {
-	var reqBody dto.UploadFileRequest
 
-	err := json.NewDecoder(r.Body).Decode(&reqBody)
+// UploadFile method    Upload a file into minio bucket
+func (h *FilesHandler) UploadFileOnMinioStorage(w http.ResponseWriter, r *http.Request) {
+	// Parse request body as multipart form data with 32MB max memory
+	err := r.ParseMultipartForm(32 << 20)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		log.Println(err)
 	}
 
-	err = reqBody.Validate()
+	// Get file uploaded via Form
+	file, handler, err := r.FormFile("file")
 	if err != nil {
-		errorhandlers.BadRequestHandler(w, r, err)
+		log.Println(err)
+		errorhandlers.InternalServerErrorHandler(w, r)
 		return
 	}
+	defer file.Close()
 
-	bucketName := reqBody.BucketName
+	// Create file locally
+	filePath := fmt.Sprintf("tmp/%s",handler.Filename)
+	localFile, err := os.Create(filePath)
+	if err != nil {
+		log.Println(err)
+		errorhandlers.InternalServerErrorHandler(w, r)
+		return
+	}
+	defer localFile.Close()
+
+	// Copy the uploaded file data to the newly created file on the filesystem
+	if _, err := io.Copy(localFile, file); err != nil {
+		log.Println(err)
+		errorhandlers.InternalServerErrorHandler(w, r)
+		return
+	}
+	bucketName := "devbucket"
 
 	bucketExists, err := services.BucketExist(bucketName)
 	if err != nil {
@@ -92,9 +114,8 @@ func (h *FilesHandler) UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	objectName := reqBody.ObjectName
-	filePath := reqBody.Filepath
-	contentType := reqBody.ContentType
+	objectName := handler.Filename
+	contentType := "application/octet-stream"
 
 	services.EncryptAndUploadFileMultipart(objectName, filePath, contentType, bucketName)
 	if err != nil {
@@ -196,7 +217,7 @@ func (h *FilesHandler) ListFiles(w http.ResponseWriter, r *http.Request) {
 func (h *FilesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.Method == http.MethodPost && FileRe.MatchString(r.URL.Path):
-		h.UploadFile(w, r)
+		h.UploadFileOnMinioStorage(w, r)
 		return
 	case r.Method == http.MethodGet && FileRe.MatchString(r.URL.Path):
 		h.ListFiles(w, r)
