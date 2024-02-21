@@ -47,7 +47,7 @@ func (h *FilesHandler) UploadFileOnLocalStorage(w http.ResponseWriter, r *http.R
 	defer file.Close()
 
 	// Create file locally
-	filePath := fmt.Sprintf("tmp/%s",handler.Filename)
+	filePath := fmt.Sprintf("tmp/%s", handler.Filename)
 	localFile, err := os.Create(filePath)
 	if err != nil {
 		log.Println(err)
@@ -83,7 +83,7 @@ func (h *FilesHandler) UploadFileOnMinioStorage(w http.ResponseWriter, r *http.R
 	defer file.Close()
 
 	// Create file locally
-	filePath := fmt.Sprintf("tmp/%s",handler.Filename)
+	filePath := fmt.Sprintf("tmp/%s", handler.Filename)
 	localFile, err := os.Create(filePath)
 	if err != nil {
 		log.Println(err)
@@ -98,6 +98,8 @@ func (h *FilesHandler) UploadFileOnMinioStorage(w http.ResponseWriter, r *http.R
 		errorhandlers.InternalServerErrorHandler(w, r)
 		return
 	}
+
+	// Update temporary file on minio
 	bucketName := "devbucket"
 
 	bucketExists, err := services.BucketExist(bucketName)
@@ -115,10 +117,12 @@ func (h *FilesHandler) UploadFileOnMinioStorage(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	objectName := handler.Filename
-	contentType := "application/octet-stream"
-
-	services.EncryptAndUploadFileMultipart(objectName, filePath, contentType, bucketName)
+	services.EncryptAndUploadFileMultipart(
+		handler.Filename,
+		filePath,
+		"application/octet-stream",
+		bucketName,
+	)
 	if err != nil {
 		log.Println(err)
 		errorhandlers.InternalServerErrorHandler(w, r)
