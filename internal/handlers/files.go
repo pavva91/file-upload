@@ -29,6 +29,7 @@ var (
 )
 
 // UploadFileOnLocalStorage method    Simply upload a file into local storage
+// TODO: Multipart Upload https://gist.github.com/andrewmilson/19185aab2347f6ad29f5
 func (h *FilesHandler) UploadFileOnLocalStorage(w http.ResponseWriter, r *http.Request) {
 	// Parse request body as multipart form data with 32MB max memory
 	err := r.ParseMultipartForm(32 << 20)
@@ -122,6 +123,12 @@ func (h *FilesHandler) UploadFileOnMinioStorage(w http.ResponseWriter, r *http.R
 		log.Println(err)
 		errorhandlers.InternalServerErrorHandler(w, r)
 		return
+	}
+
+	// Remove tmp file stored locally
+	err = os.Remove(filePath)
+	if err != nil {
+		log.Println(err)
 	}
 }
 
