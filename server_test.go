@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pavva91/file-upload/api"
-	"github.com/pavva91/file-upload/services"
-	"github.com/pavva91/file-upload/storage"
+	"github.com/pavva91/file-upload/internal/handlers"
+	"github.com/pavva91/file-upload/internal/services"
+	"github.com/pavva91/file-upload/internal/storage"
 )
 
 func TestFileUpload(t *testing.T) {
@@ -36,7 +36,7 @@ func TestFileUpload(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ts := httptest.NewServer(&api.FilesHandler{})
+	ts := httptest.NewServer(&handlers.FilesHandler{})
 	// defer ts.Close()
 
 	fileHandlerURL := ts.URL + "/files"

@@ -8,10 +8,10 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/pavva91/file-upload/api"
 	"github.com/pavva91/file-upload/config"
-	"github.com/pavva91/file-upload/services"
-	"github.com/pavva91/file-upload/storage"
+	"github.com/pavva91/file-upload/internal/handlers"
+	"github.com/pavva91/file-upload/internal/services"
+	"github.com/pavva91/file-upload/internal/storage"
 )
 
 func main() {
@@ -45,8 +45,8 @@ func main() {
 	// Register the routes and handlers
 	mux.Handle("/", &homeHandler{})
 	mux.Handle("/health", &healthHandler{})
-	mux.Handle("/files", &api.FilesHandler{})
-	mux.Handle("/files/", &api.FilesHandler{})
+	mux.Handle("/files", &handlers.FilesHandler{})
+	mux.Handle("/files/", &handlers.FilesHandler{})
 
 	// Run the server
 	fmt.Printf("Server is running on port %s", config.ServerConfigValues.Server.Port)

@@ -1,21 +1,23 @@
-package api
+package handlers
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/pavva91/file-upload/config"
-	"github.com/pavva91/file-upload/dto"
-	"github.com/pavva91/file-upload/errorhandlers"
-	"github.com/pavva91/file-upload/services"
-	"github.com/pavva91/file-upload/storage"
+	"github.com/pavva91/file-upload/internal/dto"
+	"github.com/pavva91/file-upload/internal/errorhandlers"
+	"github.com/pavva91/file-upload/internal/services"
+	"github.com/pavva91/file-upload/internal/storage"
 )
 
 type FilesHandler struct{}
@@ -26,6 +28,38 @@ var (
 	FileReWithName = regexp.MustCompile(`^/files/.+$`)
 )
 
+func (h *FilesHandler) HandlePost(w http.ResponseWriter, r *http.Request) {
+	// Parse request body as multipart form data with 32MB max memory
+	err := r.ParseMultipartForm(32 << 20)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Get file uploaded via Form
+	file, handler, err := r.FormFile("file")
+	if err != nil {
+		log.Println(err)
+		errorhandlers.InternalServerErrorHandler(w, r)
+		return
+	}
+	defer file.Close()
+
+	// Create file locally
+	localFile, err := os.Create(handler.Filename)
+	if err != nil {
+		log.Println(err)
+		errorhandlers.InternalServerErrorHandler(w, r)
+		return
+	}
+	defer localFile.Close()
+
+	// Copy the uploaded file data to the newly created file on the filesystem
+	if _, err := io.Copy(localFile, file); err != nil {
+		log.Println(err)
+		errorhandlers.InternalServerErrorHandler(w, r)
+		return
+	}
+}
 func (h *FilesHandler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	var reqBody dto.UploadFileRequest
 

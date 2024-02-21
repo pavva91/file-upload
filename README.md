@@ -4,6 +4,8 @@
 
 The aim of this challenge is to build an application that exposes an API accepting and serving
 files. Please document your choices and feel free to ask questions or intermediate code review.
+TODO: Multipart Upload: https://www.mohitkhare.com/blog/file-upload-golang/
+TODO: Use: multipart/form-data (When you are dealing with files you should use multipart/form-data)
 
 ## Preparation
 

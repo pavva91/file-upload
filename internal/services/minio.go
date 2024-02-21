@@ -11,7 +11,7 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/encrypt"
 	"github.com/pavva91/file-upload/config"
-	"github.com/pavva91/file-upload/storage"
+	"github.com/pavva91/file-upload/internal/storage"
 )
 
 func EncryptAndUploadFileMultipart(objectName string, filePath string, contentType string, bucketName string) (minio.UploadInfo, error) {
